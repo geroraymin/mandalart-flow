@@ -12,19 +12,30 @@ export function MandalartGrid({ cells, onContentChange, onCellClick }: Mandalart
   // Sort cells by position
   const sortedCells = [...cells].sort((a, b) => a.position - b.position);
 
-  // Group cells into 3x3 sub-grids for visual separation
-  const getSubGridClasses = (position: number): string => {
-    const row = Math.floor(position / 9);
-    const col = position % 9;
-    const subRow = Math.floor(row / 3);
-    const subCol = Math.floor(col / 3);
+  // Group cells into 9 sub-grids (3x3 arrangement of 3x3 grids)
+  const getSubGrids = () => {
+    const subGrids: Cell[][] = Array.from({ length: 9 }, () => []);
     
-    // Center sub-grid (the main goal area)
-    if (subRow === 1 && subCol === 1) {
-      return 'bg-primary/5';
+    sortedCells.forEach((cell) => {
+      const row = Math.floor(cell.position / 9);
+      const col = cell.position % 9;
+      const subGridRow = Math.floor(row / 3);
+      const subGridCol = Math.floor(col / 3);
+      const subGridIndex = subGridRow * 3 + subGridCol;
+      subGrids[subGridIndex].push(cell);
+    });
+    
+    return subGrids;
+  };
+
+  const subGrids = getSubGrids();
+
+  const getSubGridBgClass = (index: number): string => {
+    // Center sub-grid (index 4) is the main goal area
+    if (index === 4) {
+      return 'bg-primary/10';
     }
-    
-    return '';
+    return 'bg-card/50';
   };
 
   return (
@@ -34,15 +45,31 @@ export function MandalartGrid({ cells, onContentChange, onCellClick }: Mandalart
       transition={{ duration: 0.5 }}
       className="w-full max-w-4xl mx-auto"
     >
-      <div className="grid grid-cols-9 gap-0.5 md:gap-1 p-2 md:p-4 bg-border/30 rounded-xl grid-shadow">
-        {sortedCells.map((cell, index) => (
-          <div key={cell.id} className={getSubGridClasses(cell.position)}>
-            <MandalartCell
-              cell={cell}
-              onContentChange={onContentChange}
-              onCellClick={onCellClick}
-              delay={index}
-            />
+      {/* 3x3 Grid of Sub-Grids with borders */}
+      <div className="grid grid-cols-3 gap-1 md:gap-2 p-2 md:p-4 bg-border rounded-xl shadow-lg">
+        {subGrids.map((subGrid, subGridIndex) => (
+          <div 
+            key={subGridIndex}
+            className={`grid grid-cols-3 gap-0.5 p-1 md:p-1.5 rounded-lg ${getSubGridBgClass(subGridIndex)}`}
+          >
+            {subGrid
+              .sort((a, b) => {
+                // Sort within sub-grid by local position
+                const aRow = Math.floor(a.position / 9) % 3;
+                const aCol = a.position % 3;
+                const bRow = Math.floor(b.position / 9) % 3;
+                const bCol = b.position % 3;
+                return (aRow * 3 + aCol) - (bRow * 3 + bCol);
+              })
+              .map((cell, cellIndex) => (
+                <MandalartCell
+                  key={cell.id}
+                  cell={cell}
+                  onContentChange={onContentChange}
+                  onCellClick={onCellClick}
+                  delay={subGridIndex * 9 + cellIndex}
+                />
+              ))}
           </div>
         ))}
       </div>

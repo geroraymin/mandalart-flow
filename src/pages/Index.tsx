@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2, Sparkles, BarChart3, Grid3X3 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useMandalart } from '@/hooks/useMandalart';
 import { Header } from '@/components/Header';
 import { MandalartGrid } from '@/components/mandalart/MandalartGrid';
 import { CellDetailDrawer } from '@/components/mandalart/CellDetailDrawer';
+import { DashboardStats } from '@/components/mandalart/DashboardStats';
 import { Cell } from '@/types/mandalart';
+import { Button } from '@/components/ui/button';
 
 export default function Index() {
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ export default function Index() {
   const { mandalart, cells, loading: dataLoading, updateCellContent, updateMandalartTitle, refreshCells } = useMandalart();
   const [selectedCell, setSelectedCell] = useState<Cell | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [showDashboard, setShowDashboard] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -54,21 +57,50 @@ export default function Index() {
         onTitleChange={updateMandalartTitle}
       />
       
-      <main className="container max-w-6xl mx-auto px-4 py-8">
+      <main className="container max-w-6xl mx-auto px-4 py-6">
+        {/* View Toggle */}
+        <div className="flex justify-center mb-4">
+          <div className="inline-flex bg-secondary/50 rounded-lg p-1">
+            <Button
+              variant={showDashboard ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setShowDashboard(true)}
+              className="gap-2"
+            >
+              <BarChart3 className="w-4 h-4" />
+              대시보드
+            </Button>
+            <Button
+              variant={!showDashboard ? "default" : "ghost"}
+              size="sm"
+              onClick={() => setShowDashboard(false)}
+              className="gap-2"
+            >
+              <Grid3X3 className="w-4 h-4" />
+              그리드만
+            </Button>
+          </div>
+        </div>
+
         {/* Welcome Message */}
         {cells.length > 0 && !cells.some(c => c.content) && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8 p-6 bg-secondary/30 rounded-2xl"
+            className="text-center mb-6 p-6 bg-secondary/30 rounded-2xl"
           >
             <Sparkles className="h-8 w-8 text-primary mx-auto mb-3" />
             <h2 className="text-lg font-semibold mb-2">만다라트에 오신 것을 환영합니다!</h2>
             <p className="text-sm text-muted-foreground max-w-md mx-auto">
               중앙의 <span className="text-primary font-medium">핵심 목표</span>부터 시작하세요.
-              셀을 더블클릭하여 목표를 입력하고, 클릭하여 실천 계획을 세울 수 있습니다.
+              셀을 클릭하여 목표를 입력할 수 있습니다.
             </p>
           </motion.div>
+        )}
+
+        {/* Dashboard Stats */}
+        {showDashboard && cells.length > 0 && (
+          <DashboardStats cells={cells} />
         )}
 
         {/* Mandalart Grid */}
@@ -83,9 +115,9 @@ export default function Index() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-center mt-8 text-sm text-muted-foreground"
+          className="text-center mt-6 text-sm text-muted-foreground"
         >
-          <p>💡 팁: 셀을 <span className="font-medium">더블클릭</span>하여 수정, <span className="font-medium">클릭</span>하여 실천 계획을 확인하세요</p>
+          <p>💡 팁: 셀을 <span className="font-medium">클릭</span>하여 목표를 입력하세요. 목표가 있는 셀에 마우스를 올리면 상세 보기 버튼이 나타납니다.</p>
         </motion.div>
       </main>
 

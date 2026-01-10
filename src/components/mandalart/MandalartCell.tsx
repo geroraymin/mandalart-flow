@@ -63,22 +63,31 @@ export function MandalartCell({
 
   const progressPercentage = cell.progress || 0;
 
+  const handleClick = (e: React.MouseEvent) => {
+    if (!isEditing) {
+      // Single click to start editing
+      setIsEditing(true);
+    }
+  };
+
+  const handleOpenDrawer = () => {
+    if (!isEditing) {
+      onCellClick(cell);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       transition={{ duration: 0.3, delay: delay * 0.01 }}
       className={cn(
-        'relative aspect-square flex items-center justify-center p-1.5 rounded-md cursor-pointer transition-all duration-200',
-        'border border-border/50 overflow-hidden',
+        'relative aspect-square flex items-center justify-center p-1 rounded-md cursor-pointer transition-all duration-200',
+        'border border-border/50 overflow-hidden group',
         getCellStyles(cell.level),
         isEditing && 'ring-2 ring-primary ring-offset-1'
       )}
-      onClick={() => !isEditing && onCellClick(cell)}
-      onDoubleClick={(e) => {
-        e.stopPropagation();
-        setIsEditing(true);
-      }}
+      onClick={handleClick}
     >
       {/* Progress background fill */}
       {progressPercentage > 0 && cell.level !== 'CENTER' && (
@@ -104,12 +113,28 @@ export function MandalartCell({
           placeholder={cell.level === 'CENTER' ? '핵심 목표' : cell.level === 'SUB_CENTER' ? '중간 목표' : '세부 목표'}
         />
       ) : (
-        <span className={cn(
-          'text-[10px] md:text-xs text-center leading-tight break-words line-clamp-3 z-10',
-          !cell.content && 'opacity-40'
-        )}>
-          {cell.content || (cell.level === 'CENTER' ? '핵심 목표' : cell.level === 'SUB_CENTER' ? '중간 목표' : '+')}
-        </span>
+        <div className="relative w-full h-full flex items-center justify-center">
+          <span className={cn(
+            'text-[10px] md:text-xs text-center leading-tight break-words line-clamp-3 z-10',
+            !cell.content && 'opacity-40'
+          )}>
+            {cell.content || (cell.level === 'CENTER' ? '핵심 목표' : cell.level === 'SUB_CENTER' ? '중간 목표' : '+')}
+          </span>
+          
+          {/* Info button - shown on hover */}
+          {cell.content && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleOpenDrawer();
+              }}
+              className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-primary/80 text-primary-foreground text-[8px] font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+              title="상세 보기"
+            >
+              i
+            </button>
+          )}
+        </div>
       )}
 
       {/* Progress indicator dot */}
