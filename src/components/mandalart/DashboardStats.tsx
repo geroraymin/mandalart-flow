@@ -1,12 +1,16 @@
-import { motion } from 'framer-motion';
+import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Cell } from '@/types/mandalart';
-import { Target, TrendingUp, CheckCircle2, Clock } from 'lucide-react';
+import { Target, TrendingUp, CheckCircle2, Clock, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface DashboardStatsProps {
   cells: Cell[];
 }
 
 export function DashboardStats({ cells }: DashboardStatsProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
   // Calculate statistics
   const centerCell = cells.find(c => c.level === 'CENTER');
   const subCenterCells = cells.filter(c => c.level === 'SUB_CENTER');
@@ -50,14 +54,14 @@ export function DashboardStats({ cells }: DashboardStatsProps) {
       bgColor: 'bg-green-500/10',
     },
     {
-      label: '진행 중 목표',
+      label: '진행 중',
       value: `${activeCells}개`,
       icon: TrendingUp,
       color: 'text-amber-500',
       bgColor: 'bg-amber-500/10',
     },
     {
-      label: '작성된 셀',
+      label: '작성됨',
       value: `${filledCells}/${totalCells}`,
       icon: Clock,
       color: 'text-blue-500',
@@ -66,62 +70,95 @@ export function DashboardStats({ cells }: DashboardStatsProps) {
   ];
 
   return (
-    <div className="w-full max-w-4xl mx-auto mb-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <div className="w-full max-w-4xl mx-auto mb-4">
+      {/* Stats Cards - More compact */}
+      <div className="grid grid-cols-4 gap-2 mb-3">
         {stats.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-card border border-border rounded-xl p-4 shadow-sm"
+            transition={{ delay: index * 0.05 }}
+            className="bg-card border border-border rounded-lg p-2.5 shadow-sm"
           >
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className={`w-4 h-4 ${stat.color}`} />
+            <div className="flex items-center gap-2">
+              <div className={`p-1.5 rounded-md ${stat.bgColor}`}>
+                <stat.icon className={`w-3.5 h-3.5 ${stat.color}`} />
               </div>
-              <div>
-                <p className="text-xs text-muted-foreground">{stat.label}</p>
-                <p className="text-lg font-bold">{stat.value}</p>
+              <div className="min-w-0">
+                <p className="text-[10px] text-muted-foreground truncate">{stat.label}</p>
+                <p className="text-sm font-bold leading-tight">{stat.value}</p>
               </div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      {/* Sub-goal Progress Bars */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="bg-card border border-border rounded-xl p-4 shadow-sm"
-      >
-        <h3 className="text-sm font-semibold mb-4 flex items-center gap-2">
-          <Target className="w-4 h-4 text-primary" />
-          중간 목표별 달성률
-        </h3>
-        <div className="space-y-3">
-          {subGoalProgress.map((goal, index) => (
-            <div key={goal.id} className="space-y-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground truncate max-w-[200px]">
-                  {index + 1}. {goal.content}
-                </span>
-                <span className="font-medium">{goal.progress.toFixed(1)}%</span>
-              </div>
-              <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${goal.progress}%` }}
-                  transition={{ duration: 0.5, delay: 0.5 + index * 0.05 }}
-                  className="h-full progress-gradient rounded-full"
-                />
-              </div>
+      {/* Collapsible Sub-goal Progress */}
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <CollapsibleTrigger asChild>
+          <motion.button
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="w-full bg-card border border-border rounded-lg p-3 shadow-sm flex items-center justify-between hover:bg-accent/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">중간목표별 달성률</span>
+              <span className="text-xs text-muted-foreground">
+                ({subGoalProgress.filter(g => g.progress > 0).length}/{subGoalProgress.length} 진행 중)
+              </span>
             </div>
-          ))}
-        </div>
-      </motion.div>
+            <motion.div
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </motion.div>
+          </motion.button>
+        </CollapsibleTrigger>
+        
+        <AnimatePresence>
+          {isOpen && (
+            <CollapsibleContent forceMount asChild>
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-2">
+                  {subGoalProgress.map((goal, index) => (
+                    <div 
+                      key={goal.id} 
+                      className="bg-card border border-border rounded-lg p-2.5 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs text-muted-foreground truncate max-w-[80px]" title={goal.content}>
+                          {goal.content}
+                        </span>
+                        <span className="text-xs font-semibold text-foreground ml-1">
+                          {goal.progress.toFixed(0)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{ width: `${goal.progress}%` }}
+                          transition={{ duration: 0.4, delay: index * 0.03 }}
+                          className="h-full progress-gradient rounded-full"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            </CollapsibleContent>
+          )}
+        </AnimatePresence>
+      </Collapsible>
     </div>
   );
 }
